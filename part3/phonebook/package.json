@@ -1,0 +1,20 @@
+{
+  "name": "phonebook",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "build": "powershell Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue; cd ../../part2/phonebook; npm run build; powershell Copy-Item dist -Recurse ../../part3/phonebook/dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "morgan": "^1.11.0"
+  }
+}
