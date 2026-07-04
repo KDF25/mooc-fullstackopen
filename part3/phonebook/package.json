@@ -7,6 +7,7 @@
     "start": "node index.js",
     "dev": "node --watch index.js",
     "build": "powershell Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue; cd ../../part2/phonebook; npm run build; powershell Copy-Item dist -Recurse ../../part3/phonebook/dist",
+    "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,5 +19,11 @@
     "express": "^5.2.1",
     "mongoose": "^9.7.3",
     "morgan": "^1.11.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0"
   }
 }
