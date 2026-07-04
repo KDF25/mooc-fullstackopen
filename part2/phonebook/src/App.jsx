@@ -63,7 +63,12 @@ const App = () => {
             setNewNumber('')
             showNotification(`Updated ${returnedPerson.name}`, 'success')
           })
-          .catch(() => {
+          .catch((error) => {
+            if (error.response?.data?.error) {
+              showNotification(error.response.data.error, 'error')
+              return
+            }
+
             showNotification(
               `Information of '${existing.name}' was already removed from server`,
               'error',
@@ -81,6 +86,9 @@ const App = () => {
         setNewName('')
         setNewNumber('')
         showNotification(`Added ${returnedPerson.name}`, 'success')
+      })
+      .catch((error) => {
+        showNotification(error.response.data.error, 'error')
       })
   }
 
