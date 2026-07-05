@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@apollo/client/react'
 import { ADD_BOOK, ALL_AUTHORS, ALL_BOOKS } from '../queries'
+import { addBookToCache } from '../utils/apolloCache'
 
 const NewBook = ({ show, setError }) => {
   const [title, setTitle] = useState('')
@@ -17,6 +18,12 @@ const NewBook = ({ show, setError }) => {
     ],
     onError: (error) => {
       setError(error.message)
+    },
+    update: (cache, response) => {
+      const addedBook = response.data?.addBook
+      if (addedBook) {
+        addBookToCache(cache, addedBook)
+      }
     },
   })
 

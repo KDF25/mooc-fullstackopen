@@ -1,9 +1,12 @@
 const { GraphQLError } = require('graphql')
+const { PubSub } = require('graphql-subscriptions')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const Author = require('./models/author')
 const Book = require('./models/book')
 const User = require('./models/user')
+
+const pubsub = new PubSub()
 
 const authCheck = (context) => {
   if (!context.currentUser) {
@@ -36,7 +39,12 @@ const resolvers = {
     me: (_, __, context) => context.currentUser,
   },
   Author: {
-    bookCount: async (root) => Book.countDocuments({ author: root._id }),
+    bookCount: async (root, _, context) => {
+      if (context.bookCountLoader) {
+        return context.bookCountLoader.load(root._id.toString())
+      }
+      return Book.countDocuments({ author: root._id })
+    },
   },
   Mutation: {
     _resetDatabase: async () => {
@@ -76,7 +84,9 @@ const resolvers = {
 
       try {
         await book.save()
-        return book.populate('author')
+        const populatedBook = await book.populate('author')
+        pubsub.publish('BOOK_ADDED', { bookAdded: populatedBook })
+        return populatedBook
       } catch (error) {
         throw new GraphQLError('Saving book failed', {
           extensions: {
@@ -150,6 +160,11 @@ const resolvers = {
       return {
         value: jwt.sign(userForToken, process.env.JWT_SECRET),
       }
+    },
+  },
+  Subscription: {
+    bookAdded: {
+      subscribe: () => pubsub.asyncIterableIterator('BOOK_ADDED'),
     },
   },
 }
