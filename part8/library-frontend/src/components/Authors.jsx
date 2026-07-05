@@ -1,8 +1,7 @@
 import { useQuery } from '@apollo/client/react'
 import { ALL_AUTHORS } from '../queries'
-import SetBirthYear from './SetBirthYear'
 
-const Authors = ({ show, setError }) => {
+const Authors = ({ show }) => {
   const result = useQuery(ALL_AUTHORS)
 
   if (!show) {
@@ -34,7 +33,6 @@ const Authors = ({ show, setError }) => {
           ))}
         </tbody>
       </table>
-      <SetBirthYear setError={setError} />
     </div>
   )
 }

@@ -9,8 +9,12 @@ const NewBook = ({ show, setError }) => {
   const [genre, setGenre] = useState('')
   const [genres, setGenres] = useState([])
 
-  const [addBook] = useMutation(ADD_BOOK, {
-    refetchQueries: [{ query: ALL_AUTHORS }, { query: ALL_BOOKS }],
+  const [addBook, { loading }] = useMutation(ADD_BOOK, {
+    awaitRefetchQueries: true,
+    refetchQueries: [
+      { query: ALL_AUTHORS },
+      { query: ALL_BOOKS, variables: { genre: null } },
+    ],
     onError: (error) => {
       setError(error.message)
     },
@@ -49,28 +53,29 @@ const NewBook = ({ show, setError }) => {
       <h2>add book</h2>
       <form onSubmit={submit}>
         <div>
-          title
           <input
+            aria-label="title"
             value={title}
             onChange={({ target }) => setTitle(target.value)}
           />
         </div>
         <div>
-          author
           <input
+            aria-label="author"
             value={author}
             onChange={({ target }) => setAuthor(target.value)}
           />
         </div>
         <div>
-          published
           <input
+            aria-label="published"
             value={published}
             onChange={({ target }) => setPublished(target.value)}
           />
         </div>
         <div>
           <input
+            aria-label="genre"
             value={genre}
             onChange={({ target }) => setGenre(target.value)}
           />
@@ -79,7 +84,9 @@ const NewBook = ({ show, setError }) => {
           </button>
         </div>
         <div>genres: {genres.join(' ')}</div>
-        <button type="submit">create book</button>
+        <button type="submit" disabled={loading}>
+          create book
+        </button>
       </form>
     </div>
   )

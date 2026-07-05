@@ -7,10 +7,12 @@ const Books = ({ show }) => {
 
   const result = useQuery(ALL_BOOKS, {
     variables: { genre },
+    fetchPolicy: 'cache-and-network',
   })
 
   const allBooksResult = useQuery(ALL_BOOKS, {
     variables: { genre: null },
+    fetchPolicy: 'cache-and-network',
   })
 
   if (!show) {
@@ -42,7 +44,7 @@ const Books = ({ show }) => {
           {books.map((book) => (
             <tr key={book.title}>
               <td>{book.title}</td>
-              <td>{book.author}</td>
+              <td>{book.author.name}</td>
               <td>{book.published}</td>
             </tr>
           ))}

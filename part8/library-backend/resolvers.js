@@ -1,7 +1,17 @@
 const { GraphQLError } = require('graphql')
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 const Author = require('./models/author')
 const Book = require('./models/book')
 const User = require('./models/user')
+
+const authCheck = (context) => {
+  if (!context.currentUser) {
+    throw new GraphQLError('not authenticated', {
+      extensions: { code: 'UNAUTHENTICATED' },
+    })
+  }
+}
 
 const resolvers = {
   Query: {
@@ -23,6 +33,7 @@ const resolvers = {
     allAuthors: async () => {
       return await Author.find({})
     },
+    me: (_, __, context) => context.currentUser,
   },
   Author: {
     bookCount: async (root) => Book.countDocuments({ author: root._id }),
@@ -37,7 +48,9 @@ const resolvers = {
       await User.deleteMany({})
       return true
     },
-    addBook: async (_, args) => {
+    addBook: async (_, args, context) => {
+      authCheck(context)
+
       let author = await Author.findOne({ name: args.author })
       if (!author) {
         author = new Author({ name: args.author })
@@ -74,7 +87,9 @@ const resolvers = {
         })
       }
     },
-    editAuthor: async (_, args) => {
+    editAuthor: async (_, args, context) => {
+      authCheck(context)
+
       const author = await Author.findOne({ name: args.name })
       if (!author) {
         return null
@@ -109,6 +124,31 @@ const resolvers = {
             error,
           },
         })
+      }
+    },
+    login: async (_, args) => {
+      const user = await User.findOne({ username: args.username })
+
+      if (!user) {
+        throw new GraphQLError('wrong credentials')
+      }
+
+      const passwordCorrect = await bcrypt.compare(
+        args.password,
+        user.passwordHash,
+      )
+
+      if (!passwordCorrect) {
+        throw new GraphQLError('wrong credentials')
+      }
+
+      const userForToken = {
+        username: user.username,
+        id: user._id,
+      }
+
+      return {
+        value: jwt.sign(userForToken, process.env.JWT_SECRET),
       }
     },
   },

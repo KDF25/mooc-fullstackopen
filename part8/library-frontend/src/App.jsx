@@ -1,11 +1,18 @@
 import { useState } from 'react'
+import { useApolloClient } from '@apollo/client/react'
 import Authors from './components/Authors'
 import Books from './components/Books'
 import NewBook from './components/NewBook'
+import Login from './components/Login'
+import Recommendations from './components/Recommendations'
+import SetBirthYear from './components/SetBirthYear'
 import Notify from './components/Notify'
 
 const App = () => {
+  const client = useApolloClient()
   const [page, setPage] = useState('authors')
+  const [token, setToken] = useState(localStorage.getItem('library-token'))
+  const [showLogin, setShowLogin] = useState(false)
   const [errorMessage, setErrorMessage] = useState(null)
 
   const notify = (message) => {
@@ -13,6 +20,13 @@ const App = () => {
     setTimeout(() => {
       setErrorMessage(null)
     }, 10000)
+  }
+
+  const logout = () => {
+    localStorage.removeItem('library-token')
+    setToken(null)
+    setPage('authors')
+    client.clearStore()
   }
 
   return (
@@ -25,13 +39,34 @@ const App = () => {
         <button type="button" onClick={() => setPage('books')}>
           books
         </button>
-        <button type="button" onClick={() => setPage('add')}>
-          add book
-        </button>
+        {token ? (
+          <>
+            <button type="button" onClick={() => setPage('add')}>
+              add book
+            </button>
+            <button type="button" onClick={() => setPage('recommend')}>
+              recommend
+            </button>
+            <button type="button" onClick={logout}>
+              logout
+            </button>
+          </>
+        ) : (
+          <Login
+            setToken={setToken}
+            setError={notify}
+            showForm={showLogin}
+            setShowForm={setShowLogin}
+          />
+        )}
       </div>
-      <Authors show={page === 'authors'} setError={notify} />
+      <Authors show={page === 'authors'} />
+      {token && page === 'authors' && (
+        <SetBirthYear setError={notify} />
+      )}
       <Books show={page === 'books'} />
-      <NewBook show={page === 'add'} setError={notify} />
+      <NewBook show={page === 'add' && !!token} setError={notify} />
+      <Recommendations show={page === 'recommend' && !!token} />
     </div>
   )
 }
