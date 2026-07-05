@@ -28,6 +28,15 @@ const resolvers = {
     bookCount: async (root) => Book.countDocuments({ author: root._id }),
   },
   Mutation: {
+    _resetDatabase: async () => {
+      if (process.env.NODE_ENV !== 'test') {
+        throw new GraphQLError('_resetDatabase is only available in test mode')
+      }
+      await Author.deleteMany({})
+      await Book.deleteMany({})
+      await User.deleteMany({})
+      return true
+    },
     addBook: async (_, args) => {
       let author = await Author.findOne({ name: args.author })
       if (!author) {

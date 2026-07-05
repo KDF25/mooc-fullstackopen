@@ -28,6 +28,7 @@ const typeDefs = `
   }
 
   type Mutation {
+    _resetDatabase: Boolean
     addBook(
       title: String!
       author: String!

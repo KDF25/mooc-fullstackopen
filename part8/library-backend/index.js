@@ -16,7 +16,9 @@ const start = async () => {
   await mongoose.connect(MONGODB_URI, { family: 4 })
   console.log('connected to MongoDB')
 
-  await seed()
+  if (process.env.NODE_ENV !== 'test') {
+    await seed()
+  }
 
   const server = new ApolloServer({
     typeDefs,
