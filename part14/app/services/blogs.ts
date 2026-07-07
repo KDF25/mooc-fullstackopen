@@ -1,52 +1,44 @@
-export type Blog = {
-  id: number
-  title: string
-  author: string
-  url: string
-  likes: number
+import { desc, eq, sql } from "drizzle-orm"
+import { db } from "../../db"
+import { blogs } from "../../db/schema"
+
+export const getBlogs = async () => {
+  return db.query.blogs.findMany({
+    orderBy: desc(blogs.likes),
+  })
 }
 
-const blogs: Blog[] = [
-  {
-    id: 1,
-    title: "React patterns",
-    author: "Michael Chan",
-    url: "https://reactpatterns.com",
-    likes: 7,
-  },
-  {
-    id: 2,
-    title: "Go To Statement Considered Harmful",
-    author: "Edsger W. Dijkstra",
-    url: "https://homepages.cwi.nl/~storm/teaching/reader/Dijkstra68.pdf",
-    likes: 5,
-  },
-  {
-    id: 3,
-    title: "Canonical string reduction",
-    author: "Edsger W. Dijkstra",
-    url: "http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
-    likes: 12,
-  },
-]
-
-let nextId = 4
-
-export const getBlogs = () => {
-  return [...blogs].sort((a, b) => b.likes - a.likes)
+export const getBlogById = async (id: number) => {
+  return db.query.blogs.findFirst({
+    where: eq(blogs.id, id),
+  })
 }
 
-export const getBlogById = (id: number) => {
-  return blogs.find((blog) => blog.id === id)
+export const addBlog = async (title: string, author: string, url: string) => {
+  const user = await db.query.users.findFirst({
+    orderBy: sql`RANDOM()`,
+  })
+
+  if (!user) {
+    throw new Error("No users in database")
+  }
+
+  await db.insert(blogs).values({
+    title,
+    author,
+    url,
+    likes: 0,
+    userId: user.id,
+  })
 }
 
-export const addBlog = (title: string, author: string, url: string) => {
-  blogs.push({ id: nextId++, title, author, url, likes: 0 })
-}
+export const incrementLikes = async (id: number) => {
+  const blog = await getBlogById(id)
 
-export const incrementLikes = (id: number) => {
-  const blog = blogs.find((b) => b.id === id)
   if (blog) {
-    blog.likes += 1
+    await db
+      .update(blogs)
+      .set({ likes: blog.likes + 1 })
+      .where(eq(blogs.id, id))
   }
 }
