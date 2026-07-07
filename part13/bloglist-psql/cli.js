@@ -1,9 +1,9 @@
-const Blog = require('./models/blog')
-const sequelize = require('./models/sequelize')
+const { Blog } = require('./models')
+const { connectToDatabase, sequelize } = require('./util/db')
 
 const main = async () => {
   try {
-    await sequelize.authenticate()
+    await connectToDatabase()
     const blogs = await Blog.findAll()
 
     blogs.forEach((blog) => {

@@ -1,29 +1,59 @@
-const blogsRouter = require('express').Router()
-const Blog = require('../models/blog')
+const router = require('express').Router()
+const { Op } = require('sequelize')
+const { Blog, User } = require('../models')
+const { blogFinder, tokenExtractor } = require('../util/middleware')
 
-blogsRouter.get('/', async (request, response) => {
-  const blogs = await Blog.findAll()
-  response.json(blogs)
+router.get('/', async (req, res) => {
+  const where = {}
+
+  if (req.query.search) {
+    where[Op.or] = [
+      { title: { [Op.iLike]: `%${req.query.search}%` } },
+      { author: { [Op.iLike]: `%${req.query.search}%` } },
+    ]
+  }
+
+  const blogs = await Blog.findAll({
+    attributes: { exclude: ['userId'] },
+    include: {
+      model: User,
+      attributes: ['name'],
+    },
+    ...(Object.keys(where).length > 0 && { where }),
+    order: [['likes', 'DESC']],
+  })
+  res.json(blogs)
 })
 
-blogsRouter.post('/', async (request, response) => {
+router.post('/', tokenExtractor, async (req, res, next) => {
   try {
-    const blog = await Blog.create(request.body)
-    return response.status(201).json(blog)
+    const user = await User.findByPk(req.decodedToken.id)
+    const blog = await Blog.create({
+      ...req.body,
+      userId: user.id,
+    })
+    res.status(201).json(blog)
   } catch (error) {
-    return response.status(400).json({ error: error.message })
+    next(error)
   }
 })
 
-blogsRouter.delete('/:id', async (request, response) => {
-  const blog = await Blog.findByPk(request.params.id)
-
-  if (!blog) {
-    return response.status(404).end()
+router.put('/:id', blogFinder, async (req, res, next) => {
+  try {
+    req.blog.likes = req.body.likes
+    await req.blog.save()
+    res.json(req.blog)
+  } catch (error) {
+    next(error)
   }
-
-  await blog.destroy()
-  return response.status(204).end()
 })
 
-module.exports = blogsRouter
+router.delete('/:id', tokenExtractor, blogFinder, async (req, res) => {
+  if (req.blog.userId !== req.decodedToken.id) {
+    return res.status(403).json({ error: 'operation not permitted' })
+  }
+  await req.blog.destroy()
+  res.status(204).end()
+})
+
+module.exports = router

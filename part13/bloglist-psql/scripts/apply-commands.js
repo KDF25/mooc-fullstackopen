@@ -1,6 +1,6 @@
 const fs = require('fs')
 const path = require('path')
-const sequelize = require('../models/sequelize')
+const { sequelize } = require('../util/db')
 
 const applyCommands = async () => {
   const sqlPath = path.join(__dirname, '..', 'commands.sql')
