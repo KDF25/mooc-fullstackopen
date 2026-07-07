@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-const { Blog } = require('../models')
+const { Blog, Session } = require('../models')
 const { SECRET } = require('./config')
 
 const blogFinder = async (req, res, next) => {
@@ -14,16 +14,29 @@ const tokenExtractor = (req, res, next) => {
   const authorization = req.get('authorization')
   if (authorization && authorization.startsWith('Bearer ')) {
     try {
-      req.decodedToken = jwt.verify(
-        authorization.replace('Bearer ', ''),
-        SECRET,
-      )
+      req.token = authorization.replace('Bearer ', '')
+      req.decodedToken = jwt.verify(req.token, SECRET)
     } catch {
       return res.status(401).json({ error: 'token invalid' })
     }
   } else {
     return res.status(401).json({ error: 'token missing' })
   }
+  next()
+}
+
+const sessionValidator = async (req, res, next) => {
+  const session = await Session.findOne({
+    where: {
+      token: req.token,
+      userId: req.decodedToken.id,
+    },
+  })
+
+  if (!session) {
+    return res.status(401).json({ error: 'session invalid' })
+  }
+
   next()
 }
 
@@ -52,6 +65,7 @@ const errorHandler = (error, req, res, next) => {
 module.exports = {
   blogFinder,
   tokenExtractor,
+  sessionValidator,
   unknownEndpoint,
   errorHandler,
 }

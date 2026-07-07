@@ -1,7 +1,11 @@
 const router = require('express').Router()
 const { Op } = require('sequelize')
 const { Blog, User } = require('../models')
-const { blogFinder, tokenExtractor } = require('../util/middleware')
+const {
+  blogFinder,
+  tokenExtractor,
+  sessionValidator,
+} = require('../util/middleware')
 
 router.get('/', async (req, res) => {
   const where = {}
@@ -25,7 +29,7 @@ router.get('/', async (req, res) => {
   res.json(blogs)
 })
 
-router.post('/', tokenExtractor, async (req, res, next) => {
+router.post('/', tokenExtractor, sessionValidator, async (req, res, next) => {
   try {
     const user = await User.findByPk(req.decodedToken.id)
     const blog = await Blog.create({
@@ -48,12 +52,18 @@ router.put('/:id', blogFinder, async (req, res, next) => {
   }
 })
 
-router.delete('/:id', tokenExtractor, blogFinder, async (req, res) => {
-  if (req.blog.userId !== req.decodedToken.id) {
-    return res.status(403).json({ error: 'operation not permitted' })
-  }
-  await req.blog.destroy()
-  res.status(204).end()
-})
+router.delete(
+  '/:id',
+  tokenExtractor,
+  sessionValidator,
+  blogFinder,
+  async (req, res) => {
+    if (req.blog.userId !== req.decodedToken.id) {
+      return res.status(403).json({ error: 'operation not permitted' })
+    }
+    await req.blog.destroy()
+    res.status(204).end()
+  },
+)
 
 module.exports = router
