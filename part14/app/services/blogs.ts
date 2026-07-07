@@ -1,6 +1,7 @@
-import { desc, eq, sql } from "drizzle-orm"
+import { desc, eq } from "drizzle-orm"
 import { db } from "../../db"
-import { blogs } from "../../db/schema"
+import { blogs, readingList } from "../../db/schema"
+import { getCurrentUser } from "./session"
 
 export const getBlogs = async () => {
   return db.query.blogs.findMany({
@@ -15,20 +16,26 @@ export const getBlogById = async (id: number) => {
 }
 
 export const addBlog = async (title: string, author: string, url: string) => {
-  const user = await db.query.users.findFirst({
-    orderBy: sql`RANDOM()`,
-  })
-
+  const user = await getCurrentUser()
   if (!user) {
-    throw new Error("No users in database")
+    throw new Error("Not logged in")
   }
 
-  await db.insert(blogs).values({
-    title,
-    author,
-    url,
-    likes: 0,
+  const [blog] = await db
+    .insert(blogs)
+    .values({
+      title,
+      author,
+      url,
+      likes: 0,
+      userId: user.id,
+    })
+    .returning()
+
+  await db.insert(readingList).values({
     userId: user.id,
+    blogId: blog.id,
+    read: false,
   })
 }
 

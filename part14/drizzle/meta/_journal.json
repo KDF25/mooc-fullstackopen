@@ -8,6 +8,13 @@
       "when": 1783425913987,
       "tag": "0000_striped_purple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783428266549,
+      "tag": "0001_cool_inertia",
+      "breakpoints": true
     }
   ]
 }

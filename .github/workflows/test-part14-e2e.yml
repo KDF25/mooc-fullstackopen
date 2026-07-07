@@ -1,0 +1,56 @@
+name: End-to-End Tests
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "part14/**"
+      - ".github/workflows/test-part14-e2e.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "part14/**"
+      - ".github/workflows/test-part14-e2e.yml"
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: part14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Set up environment file
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env.test
+          echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" >> .env.test
+          echo "NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.test
+          echo "AUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" >> .env.test
+          echo "AUTH_URL=${{ secrets.NEXTAUTH_URL }}" >> .env.test
+          echo "NODE_ENV=test" >> .env.test
+
+      - name: Run database migrations
+        run: npx drizzle-kit push
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-part14
+          path: part14/playwright-report/
+          retention-days: 30
